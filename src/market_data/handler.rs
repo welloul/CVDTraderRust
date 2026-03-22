@@ -151,30 +151,33 @@ impl MarketDataHandler {
     }
 
     async fn process_trade(&mut self, trade: &Value, receive_time: std::time::Instant) {
-        let sz = trade
-            .get("sz")
-            .and_then(|s| s.as_str())
-            .and_then(|s| s.parse::<f64>().ok())
-            .unwrap_or(0.0);
-        let px = trade
-            .get("px")
-            .and_then(|s| s.as_str())
-            .and_then(|s| s.parse::<f64>().ok())
-            .unwrap_or(0.0);
+        let px = if let Some(p) = trade.get("px") {
+            if let Some(f) = p.as_f64() { f }
+            else if let Some(s) = p.as_str() { s.parse::<f64>().ok().unwrap_or(0.0) }
+            else { 0.0 }
+        } else { 0.0 };
+
+        let sz = if let Some(s) = trade.get("sz") {
+            if let Some(f) = s.as_f64() { f }
+            else if let Some(st) = s.as_str() { st.parse::<f64>().ok().unwrap_or(0.0) }
+            else { 0.0 }
+        } else { 0.0 };
+
         let is_buy = trade.get("side").and_then(|s| s.as_str()) == Some("B");
 
         // Handle timestamp conversion
         let trade_ts_ns = trade.get("time").and_then(|t| t.as_i64()).unwrap_or(0) as f64;
         let trade_ts_ms = if trade_ts_ns > 1e15 {
-            // Nanoseconds
             (trade_ts_ns / 1e6) as i64
         } else if trade_ts_ns > 1e12 {
-            // Milliseconds
             trade_ts_ns as i64
         } else {
-            // Seconds
             (trade_ts_ns * 1000.0) as i64
         };
+
+        if self.coin == "SOL" {
+            tracing::info!("DEBUG SOL: px={}, sz={}, ts={}, buy={}", px, sz, trade_ts_ms, is_buy);
+        }
 
         // Calculate latency
         let network_latency_ms = receive_time.elapsed().as_millis() as f64;
