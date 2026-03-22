@@ -53,6 +53,34 @@ impl ExecutionGateway {
         }
 
         if execution_mode == "dryrun" {
+            let mut state_lock = self.state.lock().await;
+            
+            // Initialize wallet balance for simulation if empty
+            if state_lock.wallet_balance == 0.0 {
+                state_lock.wallet_balance = 1000.0;
+            }
+
+            let new_pos = crate::core::state::Position {
+                coin: coin.to_string(),
+                size: rounded_sz,
+                entry_price: rounded_px,
+                leverage: 1.0,
+                unrealized_pnl: 0.0,
+                stop_loss: _stop_loss,
+                take_profit: _take_profit,
+                breakeven: rounded_px,
+                side: if is_buy { "LONG".to_string() } else { "SHORT".to_string() },
+                opened_at: chrono::Utc::now().to_rfc3339(),
+                entry_reason: "Strategy Signal".to_string(),
+                sl_modifications: Vec::new(),
+                tp_50_hit: false,
+                trailing_sl: 0.0,
+                original_tp: _take_profit,
+            };
+
+            state_lock.positions.insert(coin.to_string(), new_pos);
+            drop(state_lock);
+
             // Simulate success
             return Ok(Some(serde_json::json!({
                 "status": "ok",
@@ -152,8 +180,20 @@ impl ExecutionGateway {
             }
         });
 
+        let mut exit_price_str = "0.0".to_string();
+        if execution_mode == "dryrun" {
+            let state_lock = self.state.lock().await;
+            if let Some(coin_data) = state_lock.market_data.get(coin) {
+                if let Some(prices) = coin_data.get("price").and_then(|p| p.as_array()) {
+                    if let Some(last_price) = prices.last().and_then(|p| p.as_f64()) {
+                        exit_price_str = last_price.to_string();
+                    }
+                }
+            }
+        }
+
         let result = match execution_mode.as_str() {
-            "dryrun" => Ok(Some(serde_json::json!({"status": "ok", "response": {"data": {"statuses": [{"filled": {"avgPx": "0.0", "oid": 0}}]}}}))),
+            "dryrun" => Ok(Some(serde_json::json!({"status": "ok", "response": {"data": {"statuses": [{"filled": {"avgPx": exit_price_str, "oid": 0}}]}}}))),
             _ => if let Some(ref exch) = self.exchange {
                 exch.place_order(order_params).await.map(Some).map_err(|e| anyhow::anyhow!(e))
             } else {
@@ -176,6 +216,8 @@ impl ExecutionGateway {
                 } else {
                     (position.entry_price - exit_price) * position.size
                 };
+
+                state_lock.wallet_balance += pnl;
 
                 let closed_trade = crate::core::state::ClosedTrade {
                     id: uuid::Uuid::new_v4().to_string(),

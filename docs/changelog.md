@@ -3,6 +3,7 @@
 ## [2026-03-22] - Production Stabilization & Refactoring
 
 ### Fixed
+- **Market Data Event Parsing**: Fixed a critical bug in `MarketDataHandler` where dispatched `candle_closed` JSON events lacked the `price` field, causing silent parsing failures in `MarketDataEvent::from_value` and preventing candle historical buildup in the strategy module.
 - **Type Safety**: Resolved 40+ compilation errors related to `anyhow` vs `std::error::Error` trait mismatches.
 - **Asynchronous Integrity**: Added missing `.await` keywords on all `tokio-rusqlite` call sites and network I/O.
 - **Dependency Injection**: Successfully eliminated the `state::STATE` singleton, moving to explicit `Arc<Mutex<GlobalState>>` injection for improved testability and thread safety.

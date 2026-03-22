@@ -9,6 +9,9 @@
 3.  **TLS and Environment:** The production environment (AWS/Linux) requires `openssl-devel` and `sqlite-devel` to compile the `native-tls` and `bundled` rusqlite features.
 4.  **Signal Lookback:** The current `lookback` is set to 10 for rapid verification. Restoration to 20 or higher is recommended for production signal quality once functionality is confirmed on VPS.
 
+## Known Failures & Edge Cases
+- **Silent Deserialization Failures**: Event payloads (like candle closures) passed dynamically via `serde_json::Value` callbacks can be silently dropped by `MarketDataEvent::from_value` if critical fields like `price` are missing. We patched this by decorating `candle_closed` events with `price` and `latency_ms` properties, but any future events emitted from the `MarketDataHandler` must structurally adhere to the minimal requirements of `MarketDataEvent`.
+
 ## Next Steps
 - **Deploy to VPS**: Use `docs/setup.md` to move the bot to a persistent Amazon Linux environment.
 - **Implement Exchange Authentication**: Enable real order signing (currently in dryrun mode).

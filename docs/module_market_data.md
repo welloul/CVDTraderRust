@@ -30,6 +30,7 @@ Manages the lifecycle of exchange connections and dispatches events.
 ## Hurdles
 * **Network Latency**: WebSocket jitter can cause delayed signal detection.
 * **Type Safety**: Raw JSON from Hyperliquid is dynamic; `MarketDataEvent::from_value` uses safe-parsing with defaults to avoid runtime panics.
+* **Silent Event Drops**: If the JSON payload emitted by the `MarketDataHandler` lacks a critical required field (like `price`), `MarketDataEvent::from_value` returns `None`, silently dropping the event. This previously caused `candle_closed` events to never reach the strategy unit.
 
 ## Future Roadmap
 - [ ] Implement L2/L1 Order-book depth events.
