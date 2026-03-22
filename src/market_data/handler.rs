@@ -201,6 +201,8 @@ impl MarketDataHandler {
             let candle_event = serde_json::json!({
                 "type": "candle_closed",
                 "coin": &self.coin,
+                "price": finished_candle.close,
+                "latency_ms": network_latency_ms,
                 "closed_candle_1m": {
                     "start_time": finished_candle.timestamp,
                     "open": finished_candle.open,

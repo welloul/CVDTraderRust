@@ -1,4 +1,6 @@
 use serde::{Deserialize, Serialize};
+use tracing::info;
+
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Candle {
@@ -8,7 +10,7 @@ pub struct Candle {
     pub low: f64,
     pub close: f64,
     pub volume: f64,
-    pub cvd: f64,        // Cumulative Volume Delta: buy_volume - sell_volume
+    pub cvd: f64, // Cumulative Volume Delta: buy_volume - sell_volume
     pub poc: f64,
 }
 
@@ -23,7 +25,7 @@ impl Candle {
             close: price,
             volume,
             cvd,
-            poc: price,  // Simplified POC
+            poc: price, // Simplified POC
         }
     }
 
@@ -55,23 +57,45 @@ impl CandleBuilder {
         }
     }
 
-    pub fn process_trade(&mut self, timestamp_ms: i64, price: f64, volume: f64, is_buy: bool) -> Option<Candle> {
+    pub fn process_trade(
+        &mut self,
+        timestamp_ms: i64,
+        price: f64,
+        volume: f64,
+        is_buy: bool,
+    ) -> Option<Candle> {
         let candle_start = (timestamp_ms / self.interval_ms) * self.interval_ms;
+        info!(
+            "DEBUG CandleBuilder: Processing trade at ts={}, candle_start={}",
+            timestamp_ms, candle_start
+        );
 
         match &mut self.current_candle {
             Some(candle) if candle.timestamp == candle_start => {
                 // Update current candle
+                info!(
+                    "DEBUG CandleBuilder: Updating current candle for timestamp {}",
+                    candle_start
+                );
                 candle.update(price, volume, is_buy);
                 None
             }
             Some(candle) => {
                 // Finish current candle and start new one
                 let finished = candle.clone();
+                info!(
+                    "DEBUG CandleBuilder: Closing candle for {} and starting new for {}",
+                    finished.timestamp, candle_start
+                );
                 *candle = Candle::new(candle_start, price, volume, is_buy);
                 Some(finished)
             }
             None => {
                 // Start first candle
+                info!(
+                    "DEBUG CandleBuilder: Starting first candle for timestamp {}",
+                    candle_start
+                );
                 self.current_candle = Some(Candle::new(candle_start, price, volume, is_buy));
                 None
             }

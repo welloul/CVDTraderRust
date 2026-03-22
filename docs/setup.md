@@ -46,7 +46,7 @@ rustc --version
 
 ```bash
 # Clone the repository (Replace with your actual repo URL)
-git clone <your-repository-url>
+git clone https://github.com/welloul/CVDTraderRust
 cd cvd-trader-rust
 
 # Build the production binary
@@ -99,8 +99,8 @@ After=network.target
 [Service]
 Type=simple
 User=ec2-user
-WorkingDirectory=/home/ec2-user/cvd-trader-rust
-ExecStart=/home/ec2-user/cvd-trader-rust/target/release/cvd_trader_rust
+WorkingDirectory=/home/ec2-user/CVDTraderRust
+ExecStart=/home/ec2-user/CVDTraderRust/target/release/cvd_trader_rust
 Restart=always
 RestartSec=5
 Environment=RUST_LOG=info
