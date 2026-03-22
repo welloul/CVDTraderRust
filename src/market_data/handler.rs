@@ -129,7 +129,11 @@ impl MarketDataHandler {
         self.last_message_time = receive_time;
 
         if msg.contains("trades") && self.coin == "SOL" {
-            tracing::info!("Received SOL trade activity");
+            tracing::info!("SOL RAW MSG: {}", msg);
+            match serde_json::from_str::<Value>(msg) {
+                Ok(v) => tracing::info!("SOL PARSED VALUE: {:?}", v),
+                Err(e) => tracing::error!("SOL JSON ERROR: {}", e),
+            }
         }
 
         if let Ok(data) = serde_json::from_str::<Value>(msg) {
