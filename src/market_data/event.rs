@@ -13,9 +13,21 @@ pub struct MarketDataEvent {
 impl MarketDataEvent {
     pub fn from_value(value: Value) -> Option<Self> {
         let coin = value.get("coin")?.as_str()?.to_string();
-        let price = value.get("price")?.as_f64()?;
+        
+        let price = if let Some(p) = value.get("price") {
+            if let Some(f) = p.as_f64() { f }
+            else if let Some(s) = p.as_str() { s.parse::<f64>().ok()? }
+            else { return None; }
+        } else { return None; };
+
         let latency_ms = value.get("latency_ms").and_then(|v| v.as_f64()).unwrap_or(0.0);
-        let vwap = value.get("vwap").and_then(|v| v.as_f64()).unwrap_or(0.0);
+        
+        let vwap = if let Some(v) = value.get("vwap") {
+            if let Some(f) = v.as_f64() { f }
+            else if let Some(s) = v.as_str() { s.parse::<f64>().ok().unwrap_or(0.0) }
+            else { 0.0 }
+        } else { 0.0 };
+
         let closed_candle_1m = value.get("closed_candle_1m").cloned();
 
         Some(Self {
