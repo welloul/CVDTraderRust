@@ -204,7 +204,7 @@ impl StrategyModule {
                     let stop_loss = current.high * 1.01; // 1% above high
                     let take_profit = current.close * 0.98; // 2% profit target
 
-                    //                     println!("[INFO] "Short signal detected", coin = %coin, price = entry_price);
+                    tracing::info!("Short signal detected for {}, price: {}", coin, entry_price);
                     self.try_enter_position(coin, false, entry_price, stop_loss, take_profit)
                         .await;
                 } else if low_swing && self.is_cvd_exhaustion(history, false) {
@@ -213,7 +213,7 @@ impl StrategyModule {
                     let stop_loss = current.low * 0.99; // 1% below low
                     let take_profit = current.close * 1.02; // 2% profit target
 
-                    //                     println!("[INFO] "Long signal detected", coin = %coin, price = entry_price);
+                    tracing::info!("Long signal detected for {}, price: {}", coin, entry_price);
                     self.try_enter_position(coin, true, entry_price, stop_loss, take_profit)
                         .await;
                 }
@@ -268,13 +268,13 @@ impl StrategyModule {
         if is_high_swing {
             // For short signals: Price higher high + CVD lower high (bearish divergence)
             let price_high_swing = prev_candles.iter().all(|c| current.high > c.high);
-            let cvd_lower_high = prev_candles.iter().all(|c| current.cvd < c.cvd);
+            let cvd_lower_high = current.cvd < prev_candles[0].cvd && current.cvd < prev_candles[1].cvd;
 
             price_high_swing && cvd_lower_high
         } else {
             // For long signals: Price lower low + CVD higher low (bullish divergence)
             let price_low_swing = prev_candles.iter().all(|c| current.low < c.low);
-            let cvd_higher_low = prev_candles.iter().all(|c| current.cvd > c.cvd);
+            let cvd_higher_low = current.cvd > prev_candles[0].cvd && current.cvd > prev_candles[1].cvd;
 
             price_low_swing && cvd_higher_low
         }

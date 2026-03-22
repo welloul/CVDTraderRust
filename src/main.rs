@@ -85,17 +85,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         None
     };
 
-    let gateway = if let Some(exch) = exchange {
-        Some(Arc::new(Mutex::new(ExecutionGateway::new(
-            exch,
-            rounding_util,
-            Arc::clone(&state),
-            ttl_tracker.as_ref().map(Arc::clone),
-        ))))
-    } else {
-        warn!("Execution gateway is disabled (read-only mode).");
-        None
-    };
+    let gateway = Some(Arc::new(Mutex::new(ExecutionGateway::new(
+        exchange,
+        rounding_util,
+        Arc::clone(&state),
+        ttl_tracker.as_ref().map(Arc::clone),
+    ))));
 
     // Set gateway on TTL tracker
     if let (Some(ref tracker), Some(ref gateway)) = (&ttl_tracker, &gateway) {

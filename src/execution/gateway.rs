@@ -8,7 +8,7 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 
 pub struct ExecutionGateway {
-    exchange: Exchange,
+    exchange: Option<Exchange>,
     rounding_util: RoundingUtil,
     state: Arc<Mutex<GlobalState>>,
     ttl_tracker: Option<Arc<Mutex<super::ttl::OrderTTLTracker>>>,
@@ -16,7 +16,7 @@ pub struct ExecutionGateway {
 
 impl ExecutionGateway {
     pub fn new(
-        exchange: Exchange,
+        exchange: Option<Exchange>,
         rounding_util: RoundingUtil,
         state: Arc<Mutex<GlobalState>>,
         ttl_tracker: Option<Arc<Mutex<super::ttl::OrderTTLTracker>>>
@@ -80,7 +80,12 @@ impl ExecutionGateway {
             }
         });
 
-        match self.exchange.place_order(order_params).await {
+        let exchange = match self.exchange {
+            Some(ref ex) => ex,
+            None => return Err(anyhow::anyhow!("Exchange not configured for real execution")),
+        };
+
+        match exchange.place_order(order_params).await {
             Ok(result) => {
 
                 // Track the order
@@ -149,7 +154,11 @@ impl ExecutionGateway {
 
         let result = match execution_mode.as_str() {
             "dryrun" => Ok(Some(serde_json::json!({"status": "ok", "response": {"data": {"statuses": [{"filled": {"avgPx": "0.0", "oid": 0}}]}}}))),
-            _ => self.exchange.place_order(order_params).await.map(Some).map_err(|e| anyhow::anyhow!(e)),
+            _ => if let Some(ref exch) = self.exchange {
+                exch.place_order(order_params).await.map(Some).map_err(|e| anyhow::anyhow!(e))
+            } else {
+                Err(anyhow::anyhow!("Exchange not configured for real execution"))
+            },
         };
 
         if let Ok(Some(ref res)) = result {
