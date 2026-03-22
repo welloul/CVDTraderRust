@@ -364,31 +364,34 @@ impl StrategyModule {
     }
 
     async fn check_sl_tp(&self, coin: &str, price: f64) {
-        let state = self.state.lock().await;
-        if let Some(position) = state.positions.get(coin) {
-            let should_close = if position.side == "LONG" {
-                (position.take_profit > 0.0 && price >= position.take_profit)
-                    || (position.stop_loss > 0.0 && price <= position.stop_loss)
+        let (should_close, size, is_long) = {
+            let state = self.state.lock().await;
+            if let Some(position) = state.positions.get(coin) {
+                let should_close = if position.side == "LONG" {
+                    (position.take_profit > 0.0 && price >= position.take_profit)
+                        || (position.stop_loss > 0.0 && price <= position.stop_loss)
+                } else {
+                    (position.take_profit > 0.0 && price <= position.take_profit)
+                        || (position.stop_loss > 0.0 && price >= position.stop_loss)
+                };
+                (should_close, position.size.abs(), position.side == "LONG")
             } else {
-                (position.take_profit > 0.0 && price <= position.take_profit)
-                    || (position.stop_loss > 0.0 && price >= position.stop_loss)
-            };
+                (false, 0.0, false)
+            }
+        };
 
-            if should_close {
-                //                 println!("[INFO] "SL/TP triggered", coin = %coin, price = price, side = %position.side);
+        if should_close {
+            tracing::info!("SL/TP triggered for {}, price: {}", coin, price);
 
-                // Close position
-                if let Some(ref gateway) = self.execution {
-                    let size = position.size.abs();
-                    let is_long = position.side == "LONG";
-                    if let Err(e) = gateway
-                        .lock()
-                        .await
-                        .close_position(coin, size, is_long)
-                        .await
-                    {
-                        // //                         eprintln!("[ERROR]",  "Position close failed", coin = %coin, error = %e);
-                    }
+            // Close position
+            if let Some(ref gateway) = self.execution {
+                if let Err(e) = gateway
+                    .lock()
+                    .await
+                    .close_position(coin, size, is_long)
+                    .await
+                {
+                    tracing::error!("Position close failed for {}: {}", coin, e);
                 }
             }
         }
