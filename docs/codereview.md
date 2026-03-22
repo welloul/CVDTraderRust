@@ -1,0 +1,3 @@
+-Architecture Issue 3: Market data processing flows through a single StrategyModule instance, creating a potential bottleneck for multiple coins. If strategy processing for one coin becomes slow or blocks, it delays processing for all coins. Should we parallelize strategy execution?
+-Architecture Issue 4: The system has a single point of failure with Hyperliquid exchange - if the API becomes unavailable, all trading stops with no automatic recovery. Should we add resilience mechanisms for exchange connectivity?
+-Architecture Issue 5: State persistence has a failure scenario where database writes could fail silently, leading to data loss on restart. The current error handling swallows persistence errors. Should we improve error handling and add fallback mechanisms?

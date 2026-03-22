@@ -1,0 +1,19 @@
+- [x] **Unify State Ownership (DI)**: Remove lazy_static singletons and pass GlobalState via constructor.
+- [x] **Typed MarketDataEvent**: Centralize market data parsing into a robust struct.
+- [x] **Observable Configuration**: `StrategyModule` to read from `GlobalState` at runtime.
+- [x] **Scenario Testing**: Implement synthetic candle testing for strategy logic.
+- [x] **Async DB Metadata**: Port `get_stats()` to non-blocking `tokio-rusqlite`.
+- [ ] **Hyperliquid Wallet Sync**: Implement real-time sub-account and main-account balance synchronization.
+- [ ] **ECDSA Signing**: Complete the `ExecutionGateway` with real authentication for live orders.
+  - *Context*: Previously in-memory only, lost data on restart
+  - *Depends on*: None
+  - **Status**: ✅ COMPLETED - Full SQLite implementation with async operations, schema management, and data models
+
+- **Production Monitoring**: Health checks and alerting
+  - *What*: Health checker, metrics collector, alert manager with multi-channel notifications
+  - *Why*: Enables proactive issue detection and system reliability
+  - *Pros*: Real-time monitoring, automated alerting, performance tracking
+  - *Cons*: Additional background tasks and API endpoints
+  - *Context*: No monitoring capabilities previously
+  - *Depends on*: State persistence for metrics storage
+  - **Status**: ✅ COMPLETED - Full monitoring system with health checks, Prometheus metrics, email/webhook alerts, and API endpoints

@@ -1,0 +1,51 @@
+[package]
+name = "cvd_trader_rust"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1.0", features = ["full"] }
+axum = { version = "0.7", features = ["ws", "json"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+reqwest = { version = "0.12", features = ["json", "native-tls"] }
+tokio-tungstenite = { version = "0.21", features = ["native-tls"] }
+futures-util = "0.3"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+dotenvy = "0.15"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.0", features = ["v4", "serde"] }
+ndarray = "0.15"
+anyhow = "1.0"
+async-trait = "0.1"
+thiserror = "1.0"
+base64 = "0.21"
+hex = "0.4"
+sha3 = "0.10"
+toml = "0.8"
+secp256k1 = { version = "0.28", features = ["recovery"] }
+rand = "0.8"
+lazy_static = "1.4"
+
+# Database and Persistence
+rusqlite = { version = "0.31", features = ["bundled", "chrono"] }
+tokio-rusqlite = "0.5"
+
+# Monitoring and Metrics
+metrics = "0.23"
+metrics-exporter-prometheus = "0.15"
+
+[dev-dependencies]
+proptest = "1.0"
+criterion = "0.5"
+
+[[bench]]
+name = "cvd_benchmarks"
+harness = false
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"

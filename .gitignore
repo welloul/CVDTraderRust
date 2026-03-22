@@ -1,0 +1,10 @@
+/target
+**/*.rs.bk
+*.pdb
+*.swp
+.DS_Store
+backend/data/
+config.toml
+.env
+.idea/
+.vscode/
