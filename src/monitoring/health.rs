@@ -146,9 +146,9 @@ impl HealthChecker {
                         // Log unhealthy components
                         for component in &status.components {
                             if matches!(component.status, ComponentStatus::Unhealthy) {
-                                // eprintln!("[ERROR] Component unhealthy: {} - {:?}", component.name, component.message);
+                                tracing::error!("Component unhealthy: {} - {:?}", component.name, component.message);
                             } else if matches!(component.status, ComponentStatus::Degraded) {
-                                // println!("[WARN] Component degraded: {} - {:?}", component.name, component.message);
+                                tracing::warn!("Component degraded: {} - {:?}", component.name, component.message);
                             }
                         }
 
