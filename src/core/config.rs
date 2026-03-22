@@ -91,7 +91,14 @@ impl Config {
     }
 
     pub fn load() -> Self {
-        // Try to load from config.toml, fallback to defaults
-        Self::from_file("config.toml").unwrap_or_default()
+        match Self::from_file("config.toml") {
+            Ok(cfg) => cfg,
+            Err(e) => {
+                if std::path::Path::new("config.toml").exists() {
+                    eprintln!("Error loading config.toml: {}. Using default configuration.", e);
+                }
+                Self::default()
+            }
+        }
     }
 }

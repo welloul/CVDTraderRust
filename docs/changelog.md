@@ -12,7 +12,19 @@
 ### Changed
 - **Error Handling**: Standardized on `anyhow::Result` globally across all modules (`persistence`, `execution`, `market_data`, `health`).
 - **API Server**: Corrected address-binding issues and improved error reporting for the `axum` server lifecycle.
-- **Market Data**: Enhanced `MarketDataHandler` to participate in global latency tracking.
+
+## [0.1.2] - 2026-03-22 - WebSocket Stability & Heartbeat Sprint
+**🎯 Objective: Solve frequent disconnections and ensure data continuity for strategy execution.**
+
+- **WebSocket Heartbeat**: Implemented `{"method": "ping"}` logic in `MarketDataHandler` to prevent 30-second timeouts from Hyperliquid.
+- **Deadlock Mitigation**: Identified and resolved a critical async deadlock in `MarketDataHandler` where the the `GlobalState` Mutex was held through long-running callbacks.
+- **TLS Support**: Enabled `native-tls` in `Cargo.toml` to support `wss://` (WebSocket Secure) and `https://` requests on the production server.
+- **Improved Logging**:
+    - Added "Warmup" progress indicators for strategy lookback (e.g., `Warming up SOL... 5/10 candles`).
+    - Added `1m Candle Closed` and trade activity logs to verify real-time data flow.
+- **JSON Export Persistence**: Ensured `backend/data/` is created automatically, providing a stable path for exporting closed trade JSON files.
+- **Deployment & Setup**: Created a high-fidelity `docs/setup.md` for AWS Amazon Linux deployment, including a Systemd service template.
+- **Lookback Optimization**: Reduced default development lookback to 10 minutes for faster functional verification of strategy signals.
 
 ### Modules Updated
 - `src/persistence/repository.rs`: Now fully uses `anyhow` for context-aware database errors.

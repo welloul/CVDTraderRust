@@ -155,7 +155,7 @@ impl StrategyModule {
             }
         }
 
-        //         println!("[INFO] "1m Candle Closed", coin = %coin, close = candle.close);
+                tracing::info!("1m Candle Closed for {}, close: {}, cvd: {}", coin, candle.close, candle.cvd);
     }
 
     async fn evaluate_signal(&mut self, coin: &str, candle_data: &Value, vwap: f64) {
@@ -184,6 +184,9 @@ impl StrategyModule {
             };
 
             if history.len() < lookback {
+                if history.len() % 5 == 0 {
+                    tracing::info!("Warming up {}... {}/{} candles", coin, history.len(), lookback);
+                }
                 return;
             }
 
@@ -347,14 +350,14 @@ impl StrategyModule {
                 .await
             {
                 Ok(Some(_result)) => {
-                    //                     println!("[INFO] "Position opened", coin = %coin, is_buy = is_buy, price = price);
+                    tracing::info!("Position opened for {}, is_buy: {}, price: {}", coin, is_buy, price);
                     // Position tracking is handled in the gateway
                 }
                 Ok(None) => {
-                    //                     println!("[WARN]",  "Order not executed", coin = %coin);
+                    tracing::warn!("Order not executed for {}", coin);
                 }
                 Err(e) => {
-                    // //                     eprintln!("[ERROR]",  "Order execution failed", coin = %coin, error = %e);
+                    tracing::error!("Order execution failed for {}: {:?}", coin, e);
                 }
             }
         }

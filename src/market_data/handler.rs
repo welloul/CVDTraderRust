@@ -82,13 +82,17 @@ impl MarketDataHandler {
 
         // Start heartbeat monitor
         let heartbeat_handle = tokio::spawn(async move {
+            let mut interval = tokio::time::interval(std::time::Duration::from_secs(50));
             loop {
-                tokio::time::sleep(std::time::Duration::from_secs(30)).await;
-                // Send ping or check last message time
+                interval.tick().await;
+                let ping = serde_json::json!({ "method": "ping" });
+                if let Err(_) = write.send(Message::Text(ping.to_string())).await {
+                    break;
+                }
+                // tracing::debug!("Sent WebSocket ping");
             }
         });
 
-        let mut last_processed = chrono::Utc::now();
         let mut msg_count = 0;
 
         // Message handling loop
@@ -96,8 +100,13 @@ impl MarketDataHandler {
             match tokio::time::timeout(std::time::Duration::from_secs(60), read.next()).await {
                 Ok(Some(message)) => {
                     if let Ok(Message::Text(msg)) = message {
+                        // Ignore pong messages
+                        if msg.contains("pong") {
+                            continue;
+                        }
+
                         msg_count += 1;
-                        if msg_count < 10 || msg_count % 100 == 0 {
+                        if msg_count % 100 == 0 {
                             tracing::info!("Received message {} for {}", msg_count, self.coin);
                         }
                         self.handle_message(&msg).await;
@@ -105,7 +114,7 @@ impl MarketDataHandler {
                 }
                 Ok(None) => break,
                 Err(_) => {
-                    //                     println!("[WARN]",  "WebSocket timeout, reconnecting");
+                    tracing::warn!("WebSocket timeout for {}, reconnecting", self.coin);
                     break;
                 }
             }
@@ -118,6 +127,10 @@ impl MarketDataHandler {
     async fn handle_message(&mut self, msg: &str) {
         let receive_time = std::time::Instant::now();
         self.last_message_time = receive_time;
+
+        if msg.contains("trades") && self.coin == "SOL" {
+            tracing::info!("Received SOL trade activity");
+        }
 
         if let Ok(data) = serde_json::from_str::<Value>(msg) {
             if let (Some(channel), Some(trades_data)) = (

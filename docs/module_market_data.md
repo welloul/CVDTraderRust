@@ -21,6 +21,8 @@ pub struct MarketDataEvent {
 ### MarketDataHandler
 Manages the lifecycle of exchange connections and dispatches events.
 - **Dependency Injection**: Now requires `Arc<Mutex<GlobalState>>` to update global latency statistics.
+- **WebSocket Heartbeat**: Implements a 50-second `{"method": "ping"}` cycle to prevent connection timeouts from Hyperliquid.
+- **State Lock Mitigation**: Explicitly drops the global state lock before calling external callbacks to ensure 100% async safety and prevent deadlocks during high-throughput message bursts.
 - **`on_trade`**: Triggered by raw WebSocket updates. It feeds the `CandleBuilder` and emits a `MarketDataEvent`.
 - **Latency Tracking**: Appends an arrival timestamp to calculate processing delay and updates `GlobalState.latency_by_coin`.
 - **Error Handling**: Uses `anyhow::Result` for the connection lifecycle and message handling.

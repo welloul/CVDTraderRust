@@ -1,17 +1,16 @@
 ## Current Project Status
-- **Status:** **Stabilization Phase Complete**
-- **Stability:** **High** (All core compilation errors resolved, unified Error handling via Anyhow)
-- **Phase:** **Transition to Live Execution Readiness**
+- **Status:** **Ready for VPS Deployment**
+- **Stability:** **Production-Grade** (WebSocket heartbeats implemented, Deadlocks resolved, TLS support added)
+- **Phase:** **Deployment & Scaling**
 
 ## Context Injection (Critical Decisions)
 1.  **Unified State Ownership:** All split state "sources of truth" have been unified into a single `Arc<Mutex<GlobalState>>`. Do NOT re-introduce `lazy_static` singletons; the code follows explicit Dependency Injection principles.
-2.  **Typed Market Events:** Market data parsing is centralized in `src/market_data/event.rs`. MarketDataHandler now requires `GlobalState` injection to track per-coin latencies accurately.
-3.  **Unified Error Domain:** The codebase now uses `anyhow::Result` globally for fallible operations. When adding new modules, utilize `.context()` to preserve the stack-trace/context without boilerplate trait implementations.
-4.  **Observable Configuration:** Strategy logic now reads parameters directly from `GlobalState.config`. The `Config` struct is accessed via typed fields (e.g., `config.execution.mode`) rather than string-key `get()` calls.
-5.  **Non-blocking Database**: Database interactions are fully asynchronous via `tokio-rusqlite`. The `Repository` layer abstracts all SQL logic, including periodic context-aware cleanup (TTL-based).
+2.  **WebSocket Persistence:** Managed via a 50-second ping cycle. Do not reduce the ping interval below 20 seconds to avoid Hyperliquid rate-limits.
+3.  **TLS and Environment:** The production environment (AWS/Linux) requires `openssl-devel` and `sqlite-devel` to compile the `native-tls` and `bundled` rusqlite features.
+4.  **Signal Lookback:** The current `lookback` is set to 10 for rapid verification. Restoration to 20 or higher is recommended for production signal quality once functionality is confirmed on VPS.
 
 ## Next Steps
-- Implement **Exchange Authentication** for real order signing (currently in dryrun mode).
-- Finalize the **OrderTTLTracker** logic (struct exists, but logic is pending full integration).
-- Complete the **sync_state** and **sync_main_wallet_balance** TODOs in `src/core/state.rs`.
-- Implement full **Hyperliquid API** authentication in `client.rs`.
+- **Deploy to VPS**: Use `docs/setup.md` to move the bot to a persistent Amazon Linux environment.
+- **Implement Exchange Authentication**: Enable real order signing (currently in dryrun mode).
+- **Finalize OrderTTLTracker**: Complete the logic integration to manage order time-to-live.
+- **WebSocket Sharding**: If expanding beyond 10 coins, implement a connection aggregator to avoid per-coin connection overhead.
